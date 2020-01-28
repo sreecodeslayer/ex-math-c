@@ -45,16 +45,16 @@ void process_command(byte *buf, int bytes_read) {
   if(bytes_read > 0) {
     switch(fn) {
       case 1:
-        gcvt(sine(arg), 8, answer);
+        sprintf(answer, "%e", sine(arg));
         break;
       case 2:
-        gcvt(cosine(arg), 8, answer);
+        sprintf(answer, "%e", cosine(arg));
         break;
       case 3:
-        gcvt(tangent(arg), 8, answer);
+        sprintf(answer, "%e", tangent(arg));
         break;
       case 4:
-        gcvt(square_root(arg), 8, answer);
+        sprintf(answer, "%e", square_root(arg));
         break;
       default:
         fprintf(stderr, "Not a valid fn %i\n", fn);
