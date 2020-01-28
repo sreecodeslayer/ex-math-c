@@ -1,9 +1,13 @@
 /* erl_comm.c from http://erlang.org/doc/tutorial/c_port.html#id57564 */
-// from http://www.erlang.org/doc/tutorial/c_port.html#id57564
-#include <stdlib.h>
-#include <string.h>
+
 // https://bytefreaks.net/programming-2/c-programming-2/c-implicit-declaration-of-function-read-and-write
 #include <unistd.h>
+// To handle errors
+#include <err.h>
+#include <errno.h>
+
+#include <stdlib.h>
+#include <string.h>
 
 typedef unsigned char byte;
 
@@ -33,6 +37,31 @@ int write_exact(byte *buf, int len)
   return (len);
 }
 
+/**
+ * Write a len characters, pointed to by msg, to STDIN. The reason is used
+ * as debug information should the write fail.
+ */
+void write_fixed(char *msg, int len, char *reason) {
+  int written = 0;
+  while(written < len) {
+    int this_write = write(STDOUT_FILENO,  msg + written, len - written);
+    if (this_write <= 0 && errno != EINTR) {
+      err(EXIT_FAILURE, "%s: %d", reason, this_write);
+    }
+    written += this_write;
+  }
+}
+
+/**
+ * Send the zero-terminated msg back the BEAM by writing to stdout.
+ */
+void write_back(char *msg) {
+  unsigned long len = strlen(msg);
+  char size_header[2] = {(len >> 8 & 0xff), (len & 0xff)};
+  write_fixed(size_header, 2, "header write");
+  write_fixed(msg, len, "data write");
+}
+
 int read_cmd(byte *buf)
 {
   int len;
@@ -53,6 +82,30 @@ int write_cmd(byte *buf, int len)
   write_exact(&li, 1);
 
   return write_exact(buf, len);
+}
+
+int input_available()
+{
+  struct timeval tv;
+  fd_set fds;
+  tv.tv_sec = 0;
+  tv.tv_usec = 500;
+
+  FD_ZERO(&fds);
+  FD_SET(STDIN_FILENO, &fds);
+  select(STDIN_FILENO+1, &fds, NULL, NULL, &tv);
+  return (FD_ISSET(0, &fds));
+}
+
+void get_str_arg(byte *buf, char *arg, int bytes_read) {
+  buf[bytes_read] = '\0';
+  strcpy(arg, (char *) &buf[1]);
+}
+
+double get_double_from_string(byte *buf, int bytes_read) {
+  char tmp[1024];
+  get_str_arg(buf, tmp, bytes_read);
+  return atof(tmp);
 }
 
 

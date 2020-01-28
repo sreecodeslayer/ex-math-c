@@ -4,9 +4,21 @@
 #include <math.h>
 #include "erl_comm.h"
 #include <stdio.h>
+#include <string.h>
 
-
+int bytes_read;
+int serial_bytes_read;
+int serial_fd = 0;
+char serial_buf[5];
 typedef unsigned char byte;
+
+void reset_state() {
+  bytes_read = 0;
+  serial_bytes_read = 0;
+  strcpy(serial_buf, "");
+}
+
+// Functions that maps : just for the sake of it [not really required]
 
 double sine(double x){
   return sin(x);
@@ -24,40 +36,64 @@ double square_root(double x){
   return sqrt(x);
 }
 
+// The main logic function that maps stdin input to a particular fuction to get a result
+void process_command(byte *buf, int bytes_read) {
+  int fn = buf[0];
+  double arg = get_double_from_string(buf, bytes_read);
+  char answer[75];
 
-int main() {
-  // http://erlang.org/doc/tutorial/c_port.html#c-program
-  int fn, arg;
-  double res;
-  byte buf[100];
-
-  while (read_cmd(buf) > 0) {
-    fn = buf[0];
-    arg = buf[1];
-
-    printf("fn: %d arg: %d\n", fn, arg);
-
+  if(bytes_read > 0) {
     switch(fn) {
       case 1:
-        res = sine(arg);
+        gcvt(sine(arg), 8, answer);
         break;
       case 2:
-        res = cosine(arg);
+        gcvt(cosine(arg), 8, answer);
         break;
       case 3:
-        res = tangent(arg);
+        gcvt(tangent(arg), 8, answer);
         break;
       case 4:
-        res = square_root(arg);
+        gcvt(square_root(arg), 8, answer);
         break;
       default:
+        fprintf(stderr, "Not a valid fn %i\n", fn);
         break;
     }
+  }
+  else if(bytes_read <= 0) {
+    exit(1);
+  }
+  // send this to Elixir
+  write_back(answer);
+}
 
-    printf("%f\n", res);
+// Poll stdin to prevent zombie process eating up CPU
+// If there is no input or stdin is closed, we exit(1) gracefully
 
-    buf[0] = res;
-    write_cmd(buf, 1);
+void poll_serial_data(int serial_fd) {
+  serial_bytes_read = read(serial_fd, serial_buf, 5);
+
+  if(serial_bytes_read > 0) {
+    write_cmd( (byte*) serial_buf, 5);
+  }
+}
+
+int main() {
+  byte buf[100];
+  char answer;
+
+  while (1) {
+    reset_state();
+
+    if(input_available() > 0 ) {
+      bytes_read = read_cmd(buf);
+      process_command(buf, bytes_read);
+    }
+
+    if(serial_fd > 0) {
+      poll_serial_data(serial_fd);
+    }
   }
 }
 
