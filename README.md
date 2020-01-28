@@ -15,16 +15,13 @@ Currently, this can be tested using the Elixir shell : `iex`
 $ iex -S mix
 ```
 
-2. Init the GenServer
+2. Examples
 ```elixir
-iex> alias Exmath.Commands
-iex> Commands.connect()
-iex> Commands.sqrt(100)
-10
-iex> Commands.tan(45)
-1
+iex> Exmath.sqrt(100)
+10.0
+iex> Exmath.cos(0)
+1.0
 ```
 
 ## Todo
-1. Add: Supervisor to prevent C errors crashing the whole application.  
-2. Debugging: Add better ways to debug.
+1. Debugging: Add better ways to debug.
