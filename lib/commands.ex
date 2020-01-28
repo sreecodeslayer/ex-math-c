@@ -13,19 +13,19 @@ defmodule Exmath.Commands do
   end
 
   def cos(angle) do
-    GenServer.call(:commands, {:cos, angle})
+    GenServer.cast(:commands, {:cos, angle})
   end
 
   def sin(angle) do
-    GenServer.call(:commands, {:sin, angle})
+    GenServer.cast(:commands, {:sin, angle})
   end
 
   def tan(angle) do
-    GenServer.call(:commands, {:tan, angle})
+    GenServer.cast(:commands, {:tan, angle})
   end
 
   def sqrt(number) do
-    GenServer.call(:commands, {:sqrt, number})
+    GenServer.cast(:commands, {:sqrt, number})
   end
 
   # Server APIs
@@ -33,44 +33,40 @@ defmodule Exmath.Commands do
   def init(_) do
     Process.flag(:trap_exit, true)
     port = Port.open({:spawn, "priv_dir/math"}, [{:packet, 2}])
-    {:ok, %{port: port}}
+    {:ok, port}
   end
 
   @impl true
-  def handle_call({:cos, angle}, _from, %{port: port} = state) do
-    Port.command(port, [@cos_fn_c, angle])
-    answer = do_receive()
-    {:reply, answer, state}
+  def handle_cast({:cos, angle}, port) do
+    Port.command(port, [@cos_fn_c, "#{angle}"])
+    {:noreply, port}
   end
 
   @impl true
-  def handle_call({:sin, angle}, _from, %{port: port} = state) do
-    Port.command(port, [@sin_fn_c, angle])
-    answer = do_receive()
-    {:reply, answer, state}
+  def handle_cast({:sin, angle}, port) do
+    Port.command(port, [@sin_fn_c, "#{angle}"])
+    {:noreply, port}
   end
 
   @impl true
-  def handle_call({:tan, angle}, _from, %{port: port} = state) do
-    Port.command(port, [@tan_fn_c, angle])
-    answer = do_receive()
-    {:reply, answer, state}
+  def handle_cast({:tan, angle}, port) do
+    Port.command(port, [@tan_fn_c, "#{angle}"])
+    {:noreply, port}
   end
 
   @impl true
-  def handle_call({:sqrt, number}, _from, %{port: port} = state) do
-    Port.command(port, [@sqrt_fn_c, number])
-    answer = do_receive()
-    {:reply, answer, state}
+  def handle_cast({:sqrt, number}, port) do
+    Port.command(port, [@sqrt_fn_c, "#{number}"])
+    {:noreply, port}
   end
 
-  defp do_receive do
-    receive do
-      {_port, {:data, [result]}} ->
-        result
+  @impl true
+  def handle_info({_port, {:data, result}}, port) do
+    result
+    |> to_string()
+    |> String.to_float()
+    |> IO.inspect()
 
-      other ->
-        IO.puts("Unhandled message from C: #{inspect(other)}")
-    end
+    {:noreply, port}
   end
 end
