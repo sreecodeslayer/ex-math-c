@@ -26,6 +26,5 @@ iex> Commands.tan(45)
 ```
 
 ## Todo
-1. Fix: Floating point values from C is being sent as Int to Elixir.  
-2. Add: Supervisor to prevent C errors crashing the whole application.  
-3. Debugging: Add better ways to debug.
+1. Add: Supervisor to prevent C errors crashing the whole application.  
+2. Debugging: Add better ways to debug.
