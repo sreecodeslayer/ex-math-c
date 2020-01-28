@@ -1,21 +1,31 @@
 # Exmath
 
-**TODO: Add description**
+This is a sample application written to learn the implementation of Interoperability of Elixir with C language.
 
-## Installation
+The project's aim is to delegate the work of simple Mathematical function like trigonometry and finding square root, to `math.h` functions of the C Language.
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `exmath` to your list of dependencies in `mix.exs`:
+Elixir supervises the bridge using GenServer(enhancement: a Supervisor over the GenServer later) that connects to the compiled binary of the C program using `Ports`.
 
-```elixir
-def deps do
-  [
-    {:exmath, "~> 0.1.0"}
-  ]
-end
+
+## Usage
+Currently, this can be tested using the Elixir shell : `iex`
+
+1. Compile both C and Elixir sources. Just use:
+```bash
+$ iex -S mix
 ```
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/exmath](https://hexdocs.pm/exmath).
+2. Init the GenServer
+```elixir
+iex> alias Exmath.Commands
+iex> Commands.connect()
+iex> Commands.sqrt(100)
+10
+iex> Commands.tan(45)
+1
+```
 
+## Todo
+Fix: Floating point values from C is being sent as Int to Elixir.
+Add: Supervisor to prevent C errors crashing the whole application.
+Debugging: Add better ways to debug.
